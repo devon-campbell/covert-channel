@@ -69,10 +69,13 @@ int main(int argc, char *argv[]) {
         int result = check_port(port);
         if (result == 0) {
             printf("%d ", port);
-            available_count++;
             if (available_count % 10 == 0) {
                 printf("\n");
             }
+        }
+        else{
+
+            available_count++;
         }
         
         // Check for time elapsed
