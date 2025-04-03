@@ -5,6 +5,9 @@
  * time with and without flushing.
  * *********************************************** */
 
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -43,22 +46,42 @@ void print_stats(const char* label, timing_stats* stats) {
     fflush(stderr);
 }
 
-static inline void recurse(int depth, int count){
-    if (count == depth) return;
-    else recurse(depth, ++count);
+static inline void* flush_ras(void* count){
+    if (*(int*) count == REC_DEPTH) {
+        sched_yield();
+        return NULL;
+    } else {
+        (*(int*) count)++;
+        flush_ras(count);
+        return NULL;
+    }
 }
 
-// Returns time to return from nested calls
-static inline uint64_t timed_recurse(int depth, int count, bool flush){
-    if (count == depth){
-        if (flush) recurse(depth, 0);  // Flush RAS of original return addresses
-        return rdtscp64();  // Timestamp at start of unraveling
+typedef struct time_vals {
+    int count;
+    uint64_t start;
+    uint64_t delta;
+} time_vals;
+
+// Fill RAS and measure return time after an interval
+static inline void* recurse_and_yield(void* arg){
+    time_vals *tvals = (time_vals*) arg;
+    int count = tvals->count;
+    if (count == REC_DEPTH){
+        // Yield to transmitter process
+        sched_yield();
+        tvals->start = rdtscp64();
+        return NULL;
     }else{
+        ++(tvals->count);
         if (count == 0){  // Last to return (assuming depth > 0)
-            uint64_t start = timed_recurse(depth, ++count, flush);
-            return rdtscp64() - start;
+            recurse_and_yield(tvals);
+            tvals->delta = rdtscp64() - tvals->start;
+            return NULL;
+        }else{
+            recurse_and_yield(tvals);
+            return NULL;
         }
-        else return timed_recurse(depth, ++count, flush);
     }
 }
 
@@ -70,7 +93,32 @@ int main(){
     while (1) {
         int do_flush = rand() % 2;
 
-        uint64_t t = timed_recurse(REC_DEPTH, 0, do_flush);
+        uint64_t t;
+        time_vals tv = {0};
+        if (do_flush){
+            // Spawn pthreads for flushing RAS and timing execution
+            pthread_t pflush, ptime;
+            int cnt = 0;
+
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(0, &cpuset);  // Assign to core 0
+            
+            pthread_create(&ptime, NULL, recurse_and_yield, (void*) &tv);
+            pthread_create(&pflush, NULL, flush_ras, (void*) &cnt);
+
+            pthread_setaffinity_np(ptime, sizeof(cpu_set_t), &cpuset);
+            pthread_setaffinity_np(pflush, sizeof(cpu_set_t), &cpuset);
+
+            pthread_join(pflush, NULL);
+            pthread_join(ptime, NULL);
+            t = tv.delta;
+        }else{
+            // Don't spawn pthread for flushing RAS
+            recurse_and_yield(&tv);
+            t = tv.delta;
+        }
+
         // if (t >= 1500) printf("Outlier: %ld\n", t);
         if (do_flush)
             update_stats(&flushed, t);

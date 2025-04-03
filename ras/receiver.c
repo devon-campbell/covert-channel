@@ -15,9 +15,7 @@
 #include <unistd.h>
 #include <x86intrin.h>
 
-// Duration of sleep in cycles
-#define SLEEP_DUR 10000
-// Duration of test recursion
+// Depth of test recursion
 #define REC_DEPTH 16
 // Will depend on depth of recursion, size of RAS, CPU, etc.
 // Use threshold.c to fine tune
@@ -30,26 +28,26 @@ static inline uint64_t rdtscp64() {
 }
 
 // Fill RAS and measure return time after an interval
-static inline uint64_t recurse_and_wait(int depth, int count, uint64_t wait_cycles){
+static inline uint64_t recurse_and_yield(int depth, int count){
     if (count == depth){
-        // Yield to potential transmitter process
+        // Yield to transmitter process
         sched_yield();
         return rdtscp64();
     }else{
         if (count == 0){  // Last to return (assuming depth > 0)
-            uint64_t start = recurse_and_wait(depth, count+1, wait_cycles);
+            uint64_t start = recurse_and_yield(depth, count+1);
             return rdtscp64() - start;
         }
-        else return recurse_and_wait(depth, count+1, wait_cycles);
+        else return recurse_and_yield(depth, count+1);
     }
 }
 
 int main(){
     while(1){
-        uint64_t delay = recurse_and_wait(REC_DEPTH, 0, SLEEP_DUR);
+        uint64_t delay = recurse_and_yield(REC_DEPTH, 0);
         int bit = (delay > THRESHOLD) ? 1 : 0;
         printf("%d", bit);
-        // printf(" | Delay: %lu\n", delay);
+        printf(" | Delay: %lu\n", delay);
         fflush(stdout);
     }
 
