@@ -1,5 +1,6 @@
 
-
+#define _GNU_SOURCE
+#include <pthread.h>
 #include <stdint.h>
 #include <x86intrin.h> // for _mm_clflush, __rdtscp
 #include <stdio.h>
@@ -35,7 +36,11 @@
 #define DEFAULT_FILE_OFFSET 0x0
 #define DEFAULT_FILE_SIZE 4096
 #define CACHE_BLOCK_SIZE 64
+#define RAS_SIZE 16
 #define MAX_BUFFER_LEN 1024
+
+static uint32_t start_times[4096];
+static uint32_t half_times[4096];
 
 static void *event_address = NULL;
 static inline void *get_event_address()
@@ -94,105 +99,148 @@ static inline bool __attribute__((always_inline)) is_half_point()
     return (get_cycles() & CHANNEL_SYNC_MAX) > CHANNEL_HALF_MAX;
 }
 
-inline __attribute__((always_inline)) void flush_event(uint64_t addr)
-{
-    asm volatile("clflush (%0)" ::"r"(addr));
+// Read timestamp counter
+static inline uint64_t rdtscp64() {
+    unsigned aux;
+    return __rdtscp(&aux);
 }
 
-static uint32_t era_start;
-static uint32_t call_times[4096];
-static uint32_t start_times[4096];
-static uint32_t half_times[4096];
+typedef struct {
+    uint64_t count;
+    double sum;
+    long double sum_sq;
+} timing_stats;
 
-uint32_t measure_one_block_access_time(uint64_t addr)
-{
-    uint32_t cycles;
+// For threading and threshold
+typedef struct time_vals {
+    int count;
+    uint64_t start;
+    uint64_t delta;
+} time_vals;
 
-    asm volatile("mov %1, %%r8\n\t"
-                 "lfence\n\t"
-                 "rdtsc\n\t"
-                 "mov %%eax, %%edi\n\t"
-                 "mov (%%r8), %%r8\n\t"
-                 "lfence\n\t"
-                 "rdtsc\n\t"
-                 "sub %%edi, %%eax\n\t"
-                 : "=a"(cycles) /*output*/
-                 : "r"(addr)
-                 : "r8", "edi");
-
-    return cycles;
+void update_stats(timing_stats* stats, uint64_t t) {
+    stats->count++;
+    stats->sum += t;
+    stats->sum_sq += (long double)t * t;
 }
 
-// Measure access time for target address when flushed versus not flushed
-static uint64_t miss_threashold = 100;
+static inline void flush_ras(int count, int threshold){
+    if (count == threshold) {
+        sched_yield();
+        return;
+    }
+    else flush_ras(++count, threshold);
+}
 
-static void tune_threshold(void *target_address)
-{
-    uint64_t total_hit_time = 0;
-    uint64_t total_miss_time = 0;
-    uint64_t total_hits = 0;
-    uint64_t total_misses = 0;
-    uint64_t iters = 1000;
+// Modified for threaded use in thresholding method
+static inline void* flush_ras_threadable(void* count){
+    if (*(int*) count == RAS_SIZE) {
+        sched_yield();
+        return NULL;
+    } else {
+        (*(int*) count)++;
+        flush_ras_threadable(count);
+        return NULL;
+    }
+}
 
-    while (total_hits < iters && total_misses < iters)
-    {
-        // Randomly choose to flush or not
-        bool do_flush = rand() % 2;
-        if (do_flush)
-        {
-            // Flush the cache line to force a miss
-            flush_event((uint64_t)target_address);
+// Fill RAS and measure return time after an interval
+static inline uint64_t recurse_and_yield(int depth, int count){
+    if (count == depth){
+        // Yield to transmitter process
+        sched_yield();
+        return rdtscp64();
+    }else{
+        if (count == 0){  // Last to return (assuming depth > 0)
+            uint64_t start = recurse_and_yield(depth, count+1);
+            return rdtscp64() - start;
         }
-        else
-        {
-            // Access the cache line
-            // int ret = access_event();
-            uint32_t ret = measure_one_block_access_time((uint64_t)target_address);
-        }
+        else return recurse_and_yield(depth, count+1);
+    }
+}
 
-        // Measure time to access the cache line
-        uint32_t t = measure_one_block_access_time((uint64_t)target_address);
-
-        if (do_flush)
-        {
-            total_misses++;
-            total_miss_time += t;
-        }
-        else
-        {
-            total_hits++;
-            total_hit_time += t;
+// Fill RAS and measure return time after an interval - threadable
+static inline void* recurse_and_yield_threadable(void* arg){
+    time_vals *tvals = (time_vals*) arg;
+    int count = tvals->count;
+    if (count == RAS_SIZE){
+        // Yield to transmitter process
+        sched_yield();
+        tvals->start = rdtscp64();
+        return NULL;
+    }else{
+        ++(tvals->count);
+        if (count == 0){  // Last to return (assuming depth > 0)
+            recurse_and_yield_threadable(tvals);
+            tvals->delta = rdtscp64() - tvals->start;
+            return NULL;
+        }else{
+            recurse_and_yield_threadable(tvals);
+            return NULL;
         }
     }
+}
 
-    // Calculate average hit and miss times
-    uint64_t avg_hit_time = total_hit_time / total_hits;
-    uint64_t avg_miss_time = total_miss_time / total_misses;
-    printf("Average hit time: %lu\n", avg_hit_time);
-    printf("Average miss time: %lu\n", avg_miss_time);
+// Measure and set detection threshold for a RAS flush 
+static uint64_t det_threshold = 100;
+static void tune_threshold(void *target_address)
+{
+    uint64_t iterations = 0;
+    uint64_t iterlim = 10000000;
+    timing_stats flushed = {0}, nonflushed = {0};
+    srand(time(NULL));
 
-    // Set threshold to the average of hit and miss times
-    miss_threashold = (avg_hit_time + avg_miss_time) / 2;
-    printf("Threshold: %lu\n", miss_threashold);
+    while (iterations < iterlim) {
+        int do_flush = rand() % 2;
+
+        uint64_t t;
+        time_vals tv = {0};
+        if (do_flush){
+            // Spawn pthreads for flushing RAS and timing execution
+            pthread_t pflush, ptime;
+            int cnt = 0;
+
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(0, &cpuset);  // Assign to core 0
+            
+            pthread_create(&ptime, NULL, recurse_and_yield_threadable, (void*) &tv);
+            pthread_create(&pflush, NULL, flush_ras_threadable, (void*) &cnt);
+
+            pthread_setaffinity_np(ptime, sizeof(cpu_set_t), &cpuset);
+            pthread_setaffinity_np(pflush, sizeof(cpu_set_t), &cpuset);
+
+            pthread_join(pflush, NULL);
+            pthread_join(ptime, NULL);
+            t = tv.delta;
+        }else{
+            // Don't spawn pthread for flushing RAS
+            recurse_and_yield_threadable(&tv);
+            t = tv.delta;
+        }
+
+        if (do_flush) update_stats(&flushed, t);
+        else update_stats(&nonflushed, t);
+
+        iterations++;
+    }
+
+    // Set threshold to average of flush and non-flush averages
+    det_threshold = (flushed.sum/flushed.count + nonflushed.sum/nonflushed.count) / 2;
+    printf("Threshold: %lu\n", det_threshold);
     fflush(stdout);
 }
 
 // Send either high or low for a given number of cycles
-static inline void send_bit(void *target_address, bool bit, int idx)
-{
-
-    // call_times[idx] = get_cycles();
-
+static inline void send_bit(void *target_address, bool bit, int idx){
     // Wait until time step A
     uint32_t initial = start_sync();
     start_times[idx] = initial;
 
-    if (bit)
-    {
+    if (bit){
         // Send until time step B
-        while (!is_half_point())
-        {
-            flush_event((uint64_t)target_address);
+        while (!is_half_point()){
+            flush_ras(RAS_SIZE, det_threshold);
         }
     }
     else
@@ -204,29 +252,28 @@ static inline void send_bit(void *target_address, bool bit, int idx)
     half_times[idx] = get_cycles();
 }
 
-static inline bool receive_bit(void *target_address, int idx)
-{
-    uint64_t total_access_time = 0;
-    uint64_t total_accesses = 0;
-    uint32_t access_time;
+static inline bool receive_bit(void *target_address, int idx){
     // Wait until time step A
     uint32_t initial = start_sync();
     start_times[idx] = initial;
 
+    uint64_t total_ret_time = 0;
+    uint64_t total_returns = 0;
+    uint32_t return_time;
+
     // Check until time step B
     while (!is_half_point())
     {
-        access_time = measure_one_block_access_time((uint64_t)target_address);
-        total_access_time += access_time;
-        total_accesses++;
+        return_time = recurse_and_yield(RAS_SIZE, 0);
+        total_ret_time += return_time;
+        total_returns++;
     }
 
     // Calculate average access time
-    uint64_t avg_access_time = total_access_time / total_accesses;
+    uint64_t avg_ret_time = total_ret_time / total_returns;
     
-
     // Compare with threshold
-    bool out_bit = (avg_access_time > miss_threashold);
+    bool out_bit = (avg_ret_time > det_threshold);
 
     return out_bit;
 }
