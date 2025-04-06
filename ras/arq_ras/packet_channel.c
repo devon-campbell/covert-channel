@@ -1,0 +1,1 @@
+// Level of abstraction above the frame channel, sends and receives bytes via frame channel
