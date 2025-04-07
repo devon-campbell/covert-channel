@@ -26,18 +26,19 @@ bool receive_bit(void *target_address);
 
 frame_t *receive_byte_frame(void *target_address, frame_t *frame_buf, uint64_t timeout);
 
-uint64_t tune_threshold(void *target_address);
+// Confused about this
+// uint64_t tune_threshold(void *target_address);
 
-static uint64_t miss_threshold = 0;
-static inline uint64_t get_threshold(void)
-{
-    if (miss_threshold == 0) {
-        miss_threshold = tune_threshold(get_event_address(0, NULL));
-    }
-    // TODO re-tune 
+// static uint64_t miss_threshold = 0;
+// static inline uint64_t get_threshold(void)
+// {
+//     if (miss_threshold == 0) {
+//         miss_threshold = tune_threshold(get_event_address(0, NULL));
+//     }
+//     // TODO re-tune 
 
-    return miss_threshold;
-}
+//     return miss_threshold;
+// }
 
 
 

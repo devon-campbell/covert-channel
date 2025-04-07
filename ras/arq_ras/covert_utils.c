@@ -183,8 +183,7 @@ static inline void* recurse_and_yield_threadable(void* arg){
 
 // Measure and set detection threshold for a RAS flush 
 static uint64_t det_threshold = 100;
-static void tune_threshold(void *target_address)
-{
+static void tune_threshold(){
     uint64_t iterations = 0;
     uint64_t iterlim = 10000000;
     timing_stats flushed = {0}, nonflushed = {0};
