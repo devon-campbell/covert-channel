@@ -18,6 +18,12 @@ typedef struct time_vals {
     uint64_t delta;
 } time_vals;
 
+void update_stats(timing_stats* stats, uint64_t t) {
+    stats->count++;
+    stats->sum += t;
+    stats->sum_sq += (long double)t * t;
+}
+
 static inline void flush_ras(int count, int threshold){
     if (count == threshold) {
         sched_yield();
@@ -123,7 +129,7 @@ static uint64_t tune_threshold(){
     return det_threshold;
 }
 
-static inline bool receive_bit(void *target_address){
+inline bool receive_bit(void *target_address){
     // Wait until time step A
     uint32_t initial = start_sync();
 

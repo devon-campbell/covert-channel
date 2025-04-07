@@ -16,7 +16,7 @@ int main(int argv, char *argc[])
     // Send a stream of bits
     void *send_address = get_client_address();
     void *receive_address = get_server_address();
-    get_threshold(); // Ensure the threshold is tuned for the receive address
+    // get_threshold(); // Ensure the threshold is tuned for the receive address
     if (send_address == NULL || receive_address == NULL) {
         printf("Error: Could not get send or target address.\n");
         return 1;
