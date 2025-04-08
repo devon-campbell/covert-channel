@@ -2,8 +2,7 @@
 #include "receive.h"
 #include "print_utils.h"
 
-uint64_t tune_threshold(void *target_address)
-{
+uint64_t tune_threshold(void *target_address){
     uint64_t total_hit_time = 0;
     uint64_t total_miss_time = 0;
     uint64_t total_hits = 0;

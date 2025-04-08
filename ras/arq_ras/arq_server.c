@@ -1,10 +1,8 @@
-#include "arq_channel.h"
+#include "frame_channel.h"
 
 // ARQ server waits for messages from client 
 
-int main(int argv, char *argc[])
-{
-   
+int main(int argv, char *argc[]){
     // Send a stream of bits
     void *send_address = get_client_address();
     void *receive_address = get_server_address();
@@ -21,9 +19,7 @@ int main(int argv, char *argc[])
 
     arq_frame_t frame_buf;
     bool seq_num = 0; // Sequence number for ARQ, toggles between 0 and 1
-    while (1)
-    {
-     
+    while (1){
         arq_frame_t * ret = receive_arq_frame(receive_address, send_address, &frame_buf, seq_num);   
         seq_num = !seq_num; // Toggle sequence number for next frame
         if (ret == NULL) {

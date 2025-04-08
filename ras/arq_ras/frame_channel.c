@@ -3,7 +3,7 @@
 
 #include "send.h"
 #include "receive.h"
-#include "arq_channel.h"
+#include "frame_channel.h"
 #include <time.h>
 
 
@@ -128,8 +128,7 @@ void transmit_arq_frame(void *send_address, void *receive_address, uint8_t byte,
     out_frame = construct_arq_frame(byte, seq_num);
 
     // Wait for acknowledgment
-    while (retries < max_retries)
-    {
+    while (retries < max_retries){
         retries++;
         // usleep(1000*500);
 
@@ -142,8 +141,7 @@ void transmit_arq_frame(void *send_address, void *receive_address, uint8_t byte,
         // 1. ACK received with correct sequence number -> return and move on to next packet
         // 2. ACK timed out -> resend the frame
         // 3. Stale ACK received -> continue waiting for the correct ACK
-        while (1)
-        {
+        while (1){
             arq_frame_t *received_frame = receive_raw_arq_frame(receive_address, &ack_frame, timeout);
             if (received_frame == NULL)
             {  

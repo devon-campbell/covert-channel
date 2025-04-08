@@ -13,7 +13,7 @@ static inline void flush_ras(int count, int threshold){
 }
 
 // Send either high or low for a given number of cycles
-static inline void send_bit(bool bit){
+inline void send_bit(void* target_address, bool bit){
     // Wait until time step A
     uint32_t initial = start_sync();
 
@@ -29,9 +29,9 @@ static inline void send_bit(bool bit){
 }
 
 // Send a stream of bits
-inline void send_bits(bool *bits, size_t num_bits){
+inline void send_bits(bool *bits, size_t num_bits, void *target_address){
     for (size_t i = 0; i < num_bits; i++)    {
-        send_bit(bits[i]);
+        send_bit(target_address, bits[i]);
     }
 }
 
@@ -43,11 +43,11 @@ inline void send_byte_frame(void *target_address, uint8_t byte)
     struct frame frame = construct_frame(byte);
 
     // Send start delimiter
-    send_bits(frame.start_delimiter, sizeof(frame.start_delimiter));
+    send_bits(frame.start_delimiter, sizeof(frame.start_delimiter), target_address);
     // Send data
-    send_bits(frame.data, sizeof(frame.data));
+    send_bits(frame.data, sizeof(frame.data), target_address);
     // Send parity
-    send_bit(frame.parity);
+    send_bit(target_address, frame.parity);
 
     // // Print the frame for debugging
     // print_frame(frame);

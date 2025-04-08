@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Wno-nonnull -Wno-unused-variable -lm
-ARQ_OBS = send.o receive.o covert_utils.o frame_channel.o
+ARQ_OBS = send.o receive.o frame_channel.o covert_utils.o
 TARGETS = arq_client arq_server
 
 all: $(TARGETS)

@@ -126,8 +126,7 @@ uint32_t measure_one_block_access_time(uint64_t addr)
 // Measure access time for target address when flushed versus not flushed
 static uint64_t miss_threashold = 100;
 
-static void tune_threshold(void *target_address)
-{
+static void tune_threshold(void *target_address){
     uint64_t total_hit_time = 0;
     uint64_t total_miss_time = 0;
     uint64_t total_hits = 0;

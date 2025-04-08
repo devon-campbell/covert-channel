@@ -1,4 +1,7 @@
-#include "arq_channel.h"
+#include "covert_utils.h"
+#include "send.h"
+#include "receive.h"
+#include "frame_channel.h"
 
 // ARQ client sends messages to server 
 
