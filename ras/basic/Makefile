@@ -1,4 +1,4 @@
-CC = CC
+CC = gcc
 CFLAGS = -Wall -Werror -Wpedantic -Wextra
 ARQ_HDS = send.h receive.h print_utils.h arq_channel.h
 ARQ_OBS = send.o receive.o frame_channel.o

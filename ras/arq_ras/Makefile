@@ -5,15 +5,6 @@ default: all
 # Common compiler flags
 CFLAGS = -Wall -Wextra -Wno-nonnull -Wno-unused-variable -lm
 
-# threshold: threshold.c channel.h
-# 	gcc $(CFLAGS) -o threshold threshold.c
-
-# sender: sender.c channel.h
-# 	gcc $(CFLAGS) -o sender sender.c
-
-# receiver: receiver.c channel.h
-# 	gcc $(CFLAGS) -o receiver receiver.c
-
 send.h: covert_utils.h
 receive.h: covert_utils.h
 
