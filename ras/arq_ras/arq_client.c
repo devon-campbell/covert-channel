@@ -19,7 +19,7 @@ int main(int argv, char *argc[])
     // Send a stream of bits
     void *send_address = get_client_address();
     void *receive_address = get_server_address();
-    // get_threshold(); // Ensure the threshold is tuned for the receive address
+    get_threshold(); // Ensure the threshold is tuned for the receive address
     if (send_address == NULL || receive_address == NULL) {
         printf("Error: Could not get send or target address.\n");
         return 1;
@@ -36,9 +36,7 @@ int main(int argv, char *argc[])
     fclose(sent_file); // Close the file after writing
 
     bool seq_num = 0; // Sequence number for ARQ, toggles between 0 and 1
-    while (1)
-    {
-     
+    while (1){
         for (size_t i = 0; i < bytestream_len; i++)
         {
             printf("\n\nSending byte: %c\n", bytestream[i]);

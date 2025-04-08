@@ -7,10 +7,11 @@
 #include <sched.h>
 
 // Measure and set detection threshold for a RAS flush 
-static uint64_t tune_threshold(){
-    printf("Threshold tuning...");
+uint64_t tune_threshold(){
+    printf("Threshold tuning...\n");
+    fflush(stdout);
     uint64_t iterations = 0;
-    uint64_t iterlim = 10000000;
+    uint64_t iterlim = 1000000;
     uint64_t det_threshold;
     timing_stats flushed = {0}, nonflushed = {0};
     srand(time(NULL));
@@ -52,6 +53,7 @@ static uint64_t tune_threshold(){
 
     // Set threshold to average of flush and non-flush averages
     det_threshold = (flushed.sum/flushed.count + nonflushed.sum/nonflushed.count) / 2;
+    printf("Threshold: %lu\n", det_threshold);
     return det_threshold;
 }
 
@@ -62,7 +64,7 @@ inline bool receive_bit(void *target_address){
     uint64_t total_ret_time = 0;
     uint64_t total_returns = 0;
     uint32_t return_time;
-    uint64_t det_threshold = tune_threshold();
+    uint64_t threshold = get_threshold();
 
     // Check until time step B
     while (!is_half_point())
@@ -76,14 +78,13 @@ inline bool receive_bit(void *target_address){
     uint64_t avg_ret_time = total_ret_time / total_returns;
     
     // Compare with threshold
-    bool out_bit = (avg_ret_time > det_threshold);
+    bool out_bit = (avg_ret_time > threshold);
 
     return out_bit;
 }
 
 // Receive a byte frame: state machine that waits for the preamble, start delimiter, reads data and parity
-inline frame_t *receive_byte_frame(void *target_address, frame_t *frame_buf, uint64_t timeout)
-{
+inline frame_t *receive_byte_frame(void *target_address, frame_t *frame_buf, uint64_t timeout){
     memset(frame_buf, 0, sizeof(frame_t));
 
     // In waiting state, look for the start delimiter with 8 bit shift register
