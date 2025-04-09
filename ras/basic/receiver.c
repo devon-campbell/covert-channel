@@ -19,7 +19,7 @@
 #define REC_DEPTH 16
 // Will depend on depth of recursion, size of RAS, CPU, etc.
 // Use threshold.c to fine tune
-#define THRESHOLD 750
+#define THRESHOLD 320
 
 // Read timestamp counter
 static inline uint64_t rdtscp64() {
@@ -47,7 +47,7 @@ int main(){
         uint64_t delay = recurse_and_yield(REC_DEPTH, 0);
         int bit = (delay > THRESHOLD) ? 1 : 0;
         printf("%d", bit);
-        // printf(" | Delay: %lu\n", delay);
+        printf(" | Delay: %lu\n", delay);
         fflush(stdout);
     }
 
