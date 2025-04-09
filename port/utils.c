@@ -1,6 +1,6 @@
 #include "utils.h"
 
-#define BYTES 1024
+#define BYTES 128
 #define SEND_PORT 3024
 #define RECV_PORT 3025
 #define SPIN_NUM 10000
