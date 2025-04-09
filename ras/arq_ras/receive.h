@@ -30,7 +30,7 @@ uint64_t tune_threshold();
 
 static uint64_t det_threshold = 0;
 static inline uint64_t get_threshold(){
-    return 300;
+    return 330;
     if (det_threshold == 0) {
         printf("Initial threshold detection...\n");
         det_threshold = tune_threshold();
