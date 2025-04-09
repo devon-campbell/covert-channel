@@ -8,7 +8,6 @@
 
 // Measure and set detection threshold for a RAS flush 
 uint64_t tune_threshold(){
-    printf("Threshold tuning...\n");
     fflush(stdout);
     uint64_t iterations = 0;
     uint64_t iterlim = 1000000;
@@ -53,18 +52,17 @@ uint64_t tune_threshold(){
 
     // Set threshold to average of flush and non-flush averages
     det_threshold = (flushed.sum/flushed.count + nonflushed.sum/nonflushed.count) / 2;
-    printf("Threshold: %lu\n", det_threshold);
     return det_threshold;
 }
 
 inline bool receive_bit(void *target_address){
     // Wait until time step A
+    uint64_t threshold = get_threshold();
     uint32_t initial = start_sync();
 
     uint64_t total_ret_time = 0;
     uint64_t total_returns = 0;
     uint32_t return_time;
-    uint64_t threshold = get_threshold();
 
     // Check until time step B
     while (!is_half_point())

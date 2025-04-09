@@ -26,14 +26,14 @@ bool receive_bit(void *target_address);
 
 frame_t *receive_byte_frame(void *target_address, frame_t *frame_buf, uint64_t timeout);
 
-// Confused about this
 uint64_t tune_threshold();
 
 static uint64_t det_threshold = 0;
-static inline uint64_t get_threshold(void)
-{
+static inline uint64_t get_threshold(){
     if (det_threshold == 0) {
+        printf("Initial threshold detection...");
         det_threshold = tune_threshold();
+        printf("Detection threshold (cycles): %lu\n", det_threshold);
     }
     return det_threshold;
 }

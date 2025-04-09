@@ -19,7 +19,6 @@ int main(int argv, char *argc[]){
 
     arq_frame_t frame_buf;
     bool seq_num = 0; // Sequence number for ARQ, toggles between 0 and 1
-    get_threshold();  // Tune once
     while (1){
         arq_frame_t * ret = receive_arq_frame(receive_address, send_address, &frame_buf, seq_num);   
         seq_num = !seq_num; // Toggle sequence number for next frame
