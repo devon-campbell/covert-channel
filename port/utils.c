@@ -1,9 +1,9 @@
 #include "utils.h"
 
-#define BYTES 64
+#define BYTES 16
 #define SEND_PORT 3024
 #define RECV_PORT 3025
-#define SPIN_NUM 100000000
+#define SPIN_NUM 10000
 Data * make_data(int n) {
     Data *data = (Data *) malloc(sizeof(Data));
     data->length = 0;
@@ -145,7 +145,6 @@ int send_data(const char *data, int n){
                 }
             }
         }
-        
         struct timespec start, current;
         clock_gettime(CLOCK_REALTIME, &start);
         // Releasing sync_send and waiting for sync_recv
@@ -156,7 +155,7 @@ int send_data(const char *data, int n){
         while(check_port(sync_recv)) {
             clock_gettime(CLOCK_REALTIME, &current);
             if((current.tv_sec - start.tv_sec) + 
-               (current.tv_nsec - start.tv_nsec) / 1e9 > 0.005){
+               (current.tv_nsec - start.tv_nsec) / 1e9 > .05){
                  
                 fprintf(stderr, "Timeout waiting for sync_recv port\n");
                 if (f_count > 1) {
@@ -170,6 +169,7 @@ int send_data(const char *data, int n){
         if(flag == 0){
             f_count = 0;
         }
+        while(!check_port(sync_recv));
     }
     
     
