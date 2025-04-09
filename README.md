@@ -12,12 +12,39 @@ We met twice over the course of the assignment and communicated progress asynchr
 (Hardware specs & any information required for reproducing your results)
 
 ### Technique 2: Prime + Probe
-(Explanation)
+This implementation demonstrates a microarchitectural covert channel leveraging the Prime+Probe cache side-channel technique to transmit information stealthily between a sender and receiver. At a high level, the sender and receiver coordinate by repeatedly targeting a specific set in the CPU's last-level cache (LLC). The sender encodes bits by selectively evicting cache lines: a logical `1` bit is represented by aggressively evicting cache lines (thus causing cache misses), while a `0` bit is indicated by idling (allowing cache hits). 
+
+Concurrently, the receiver probes the same cache set by measuring access latencies to a carefully chosen eviction set. Elevated latency indicates sender-induced cache misses (interpreted as bit `1`), whereas low latency indicates the absence of eviction activity (interpreted as bit `0`). Synchronization between sender and receiver is achieved using the processor's timestamp counter (rdtscp instruction) to align their time slots precisely. An Automatic Repeat reQuest (ARQ) protocol overlays this channel to ensure reliability, detect errors, and manage retransmissions. The result is a covert communication mechanism exploiting microarchitectural timing variations invisible to conventional monitoring tools.
+
 (Why believed technique would work)
+
+#### Bandwidth
 (Expected bandwidth vs actual bandwidth achieved)
+
+#### 
 (Hardware specs & any information required for reproducing your results)
 
-### Technique 3: Return Address Stach (RAS)
+System Requirements:
+- Requires `/dev/hugepages` to be mounted (for shared memory)
+- Tested on modern Intel CPUs with inclusive LLC
+- Run client and server on isolated cores (`taskset -c`)
+- May require `sudo` to access huge pages or perform low-level ops
+
+Running the channel:
+```bash
+# Enable huge pages
+sudo sysctl -w vm.nr_hugepages=8
+sudo mkdir -p /dev/hugepages
+sudo mount -t hugetlbfs none /dev/hugepages
+
+# Terminal 1 (Server)
+sudo taskset -c 0 ./arq_server
+
+# Terminal 2 (Client)
+sudo taskset -c 1 ./arq_client "HELLO WORLD"
+```
+
+### Technique 3: Return Address Stack (RAS)
 (Explanation)
 (Why believed technique would work)
 (Expected bandwidth vs actual bandwidth achieved)
