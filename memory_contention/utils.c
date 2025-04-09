@@ -1,6 +1,7 @@
 #include "utils.h"
 
-
+#define SEND_TIME 5000 // 5ms
+#define WAIT_BOUNDRY 10000 // 10ms
 
 // Function to create a new Data structure
 Data *make_data(int initial_size) {
@@ -40,7 +41,22 @@ void free_data(Data *data) {
         free(data);
     }
 }
+// Function to wait for the edge of a time boundary in nanoseconds
+void wait_for_time_boundary(int boundary_ns) {
+    struct timespec current;
+    clock_gettime(CLOCK_MONOTONIC, &current);
 
+    long current_ns = current.tv_sec * 1000000000L + current.tv_nsec;
+    long target_ns = ((current_ns / boundary_ns) + 1) * boundary_ns;
+
+    while (1) {
+        clock_gettime(CLOCK_MONOTONIC, &current);
+        current_ns = current.tv_sec * 1000000000L + current.tv_nsec;
+        if (current_ns >= target_ns) {
+            break;
+        }
+    }
+}
 // New function to saturate memory bus with DRAM reads
 void saturate_memory_bus(int duration_us) {
     // Create a large array that exceeds cache size
@@ -136,14 +152,15 @@ int send_data(const char *data, int n) {
         
         // Process each bit in the byte
         for (int bit = 0; bit < 8; bit++) {
+            // Active wait for the edge of 10ms based on the clock
+            wait_for_time_boundary(WAIT_BOUNDRY);
             int bit_value = (byte >> bit) & 1;
             
             if (bit_value == 1) {
                 // For '1' bit: saturate memory bus
-                saturate_memory_bus(5000);  // Saturate for 5ms
+                saturate_memory_bus(SEND_TIME);  // Saturate for SEND_TIME
             } else {
-                // For '0' bit: do nothing, just wait
-                usleep(5000);  // Wait equivalent time
+                continue; 
             }
             
             
@@ -156,7 +173,7 @@ int send_data(const char *data, int n) {
 }
 
 // Modified function to receive data through the DRAM contention channel
-Data * recv_data() {
+Data * recv_data(int len) {
     
     
     Data *data = make_data(1024);  // Initial buffer size
@@ -168,13 +185,27 @@ Data * recv_data() {
         
         // Process each bit in a byte
         for (int bit = 0; bit < 8; bit++) {
-            
+            wait_for_time_boundary(WAIT_BOUNDRY);
             // Measure DRAM access time
-            uint64_t access_time = measure_dram_access_time();
+            struct timespec start, current;
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            uint64_t total_time = 0;
+            int count = 0;
+
+            do {
+                uint64_t access_time = measure_dram_access_time();
+                total_time += access_time;
+                count++;
+
+                clock_gettime(CLOCK_MONOTONIC, &current);
+            } while ((current.tv_sec - start.tv_sec) * 1000000000L + 
+                     (current.tv_nsec - start.tv_nsec) < SEND_TIME);
+
+            uint64_t average_time = total_time / count;
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
-            if (access_time > DRAM_THRESHOLD_NS) {
+            if (average_time > DRAM_THRESHOLD_NS) {
                 // Slow access means memory bus contention, interpret as '1'
                 byte |= (1 << bit);
             }
@@ -183,10 +214,14 @@ Data * recv_data() {
             // Mark bit as received
         }
         
-        // Check for end of byte marker
         
         data->data[data->length++] = byte;
-        
+        if (data->length >= data->size) {
+            data = double_data(data);
+        }
+        if (data->length >= len) {
+            break;  // Stop if we have received enough data
+        }
         // Small delay before checking next byte
     }
     
