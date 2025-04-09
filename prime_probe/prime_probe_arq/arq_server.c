@@ -7,9 +7,7 @@
 /**
  * ARQ server listens for messages from the client using Prime+Probe.
  */
-int main(void)
-{
-    // Setup: Prime+Probe + threshold
+int main(void) {
     phy_init();
 
     FILE *recv_file = fopen("server_recv.txt", "w");
@@ -23,19 +21,17 @@ int main(void)
 
     while (1) {
         arq_frame_t *ret = receive_arq_frame(&frame_buf, seq_num);
-        if (!ret) {
-            printf("[server] Frame dropped or timed out.\n");
-            continue;
-        }
+        if (!ret) continue;
 
-        seq_num ^= 1;  // toggle for next frame
+        seq_num ^= 1;  
 
         uint8_t byte = byte_from_bools(frame_buf.frame.data);
-        printf("[server] Received byte: 0x%02x ('%c')\n", byte, byte);
+        // printf("[server] Received byte: 0x%02x ('%c')\n", byte, byte);
 
         fputc(byte, recv_file);
         fflush(recv_file);
     }
 
+    fclose(recv_file);
     return 0;
 }

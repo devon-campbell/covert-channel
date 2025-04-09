@@ -43,10 +43,10 @@ void pp_init(void)
             prime_probe_lines[found++] = cand;
     }
     if (found < SET_ASSOC) {
-        fprintf(stderr, "[pp] need %d lines, found %d\n", SET_ASSOC, found);
+        // fprintf(stderr, "[pp] need %d lines, found %d\n", SET_ASSOC, found);
         exit(1);
     }
-    fprintf(stderr, "[pp] set %d initialised (%d lines)\n", TARGET_SET, SET_ASSOC);
+    // fprintf(stderr, "[pp] set %d initialised (%d lines)\n", TARGET_SET, SET_ASSOC);
 }
 
 /* ---------- primitives --------------------------------------------- */

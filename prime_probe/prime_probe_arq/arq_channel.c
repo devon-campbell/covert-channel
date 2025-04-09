@@ -68,7 +68,7 @@ arq_frame_t *receive_raw_arq_frame(arq_frame_t *frame_buf, uint64_t timeout)
 
     if (!valid_frame(frame_buf->frame)) {
         //printf("Invalid frame received\n");
-        print_arq_frame(*frame_buf);
+        // print_arq_frame(*frame_buf);
         return NULL;
     }
 
@@ -78,8 +78,8 @@ arq_frame_t *receive_raw_arq_frame(arq_frame_t *frame_buf, uint64_t timeout)
 
 void transmit_arq_frame(uint8_t byte, bool seq_num)
 {
-    printf("--------- Transmitting ARQ packet (seq_num=%d, byte=0x%x) ---------\n",
-           seq_num, byte);
+    // printf("--------- Transmitting ARQ packet (seq_num=%d, byte=0x%x) ---------\n",
+    //        seq_num, byte);
 
     arq_frame_t out_frame = construct_arq_frame(byte, seq_num);
     arq_frame_t ack_frame = {0};
@@ -87,7 +87,7 @@ void transmit_arq_frame(uint8_t byte, bool seq_num)
 
     while (retries++ < max_retries) {
         send_raw_arq_frame(out_frame);
-        printf("[transmit_arq_frame] Frame sent, waiting for ACK (attempt %d/%d)\n", retries, max_retries);
+        // printf("[transmit_arq_frame] Frame sent, waiting for ACK (attempt %d/%d)\n", retries, max_retries);
 
         while (1) {
             arq_frame_t *received_frame = receive_raw_arq_frame(&ack_frame, ARQ_TIMEOUT);
@@ -96,26 +96,26 @@ void transmit_arq_frame(uint8_t byte, bool seq_num)
                 break;
             }
 
-            uint8_t ack_byte = byte_from_bools(received_frame->frame.data);
+            // uint8_t ack_byte = byte_from_bools(received_frame->frame.data);
             bool ack_seq = calculate_seq_num(received_frame);
-            printf("[transmit_arq_frame] ACK received (seq_num=%d, byte=0x%x)\n", ack_seq, ack_byte);
+            // printf("[transmit_arq_frame] ACK received (seq_num=%d, byte=0x%x)\n", ack_seq, ack_byte);
 
             if (ack_seq == seq_num) {
-                printf("------- ACK confirmed, moving on (seq_num=%d) -------\n", seq_num);
+                // printf("------- ACK confirmed, moving on (seq_num=%d) -------\n", seq_num);
                 return;
             } else {
-                printf("[transmit_arq_frame] Stale ACK (expected %d, got %d), waiting...\n", seq_num, ack_seq);
+                // printf("[transmit_arq_frame] Stale ACK (expected %d, got %d), waiting...\n", seq_num, ack_seq);
             }
         }
     }
 
-    printf("[transmit_arq_frame] Gave up after %d retries.\n", max_retries);
+    // printf("[transmit_arq_frame] Gave up after %d retries.\n", max_retries);
 }
 
 arq_frame_t *receive_arq_frame(arq_frame_t *frame_buf, bool expected_seq_num)
 {
     memset(frame_buf, 0, sizeof(arq_frame_t));
-    printf("------ [receive_arq_frame] Waiting (expect seq_num=%d) ------\n", expected_seq_num);
+    // printf("------ [receive_arq_frame] Waiting (expect seq_num=%d) ------\n", expected_seq_num);
 
     while (1) {
         arq_frame_t *received_frame = receive_raw_arq_frame(frame_buf, ARQ_TIMEOUT);
@@ -126,10 +126,10 @@ arq_frame_t *receive_arq_frame(arq_frame_t *frame_buf, bool expected_seq_num)
 
         uint8_t data_byte = byte_from_bools(received_frame->frame.data);
         bool received_seq = calculate_seq_num(received_frame);
-        printf("[receive_arq_frame] Got frame: seq_num=%d, byte=0x%x\n", received_seq, data_byte);
+        // printf("[receive_arq_frame] Got frame: seq_num=%d, byte=0x%x\n", received_seq, data_byte);
 
         if (received_seq != expected_seq_num) {
-            printf("[receive_arq_frame] Stale packet => re-ACK\n");
+            // printf("[receive_arq_frame] Stale packet => re-ACK\n");
             arq_frame_t ack = construct_arq_frame(data_byte, received_seq);
             send_raw_arq_frame(ack);
             continue;
@@ -137,7 +137,7 @@ arq_frame_t *receive_arq_frame(arq_frame_t *frame_buf, bool expected_seq_num)
 
         arq_frame_t ack = construct_arq_frame(data_byte, received_seq);
         send_raw_arq_frame(ack);
-        printf("[receive_arq_frame] ACK sent => returning frame\n");
+        // printf("[receive_arq_frame] ACK sent => returning frame\n");
         return received_frame;
     }
 }
