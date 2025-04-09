@@ -10,7 +10,7 @@
 uint64_t tune_threshold(){
     fflush(stdout);
     uint64_t iterations = 0;
-    uint64_t iterlim = 1000000;
+    uint64_t iterlim = 100000;
     uint64_t det_threshold;
     timing_stats flushed = {0}, nonflushed = {0};
     srand(time(NULL));
