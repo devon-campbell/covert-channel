@@ -14,9 +14,7 @@
 
 
 int main(){
-    printf("Receiver started\n");
     Data *data = recv_data();
-    printf("Data received\n");
     // printf("Received data length: %d\n", data->length);
     for(int i = 0; i < data->length; i++){
         printf("%c", data->data[i]);

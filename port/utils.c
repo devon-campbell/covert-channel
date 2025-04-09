@@ -1,6 +1,6 @@
 #include "utils.h"
 
-#define BYTES 128
+#define BYTES 64
 #define SEND_PORT 3024
 #define RECV_PORT 3025
 #define SPIN_NUM 10000
@@ -108,7 +108,6 @@ int send_data(const char *data, int n){
         data_ports[i-1] = sync_recv + i;
     }
     
-    // splitting the data into BYTES byte chunks
     int open[BYTES*8] = {0};
     for(int i = 0; i < n; i += BYTES) {
         // Start timing this chunk
