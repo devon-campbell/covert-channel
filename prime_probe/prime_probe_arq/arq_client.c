@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
 
     // Save sent message to log
     FILE *sent_file = fopen("client_sent.txt", "w");
+    FILE *time_file = fopen("time.txt", "w");
     fprintf(sent_file, "%s", bytestream);
     fclose(sent_file);
 
@@ -61,6 +62,8 @@ int main(int argc, char *argv[]) {
                           (end.tv_nsec - start.tv_nsec) / 1e9;
 
     printf("[client] Done sending. Elapsed time: %.3f seconds\n", elapsed_time);
+    fprintf(time_file, "%f", elapsed_time);
+    fclose(time_file);
 
     free(bytestream);
     return 0;

@@ -28,10 +28,13 @@ void pp_init(void)
     if (fd < 0) { perror("open"); exit(1); }
     if (ftruncate(fd, BUFFER_SIZE)) { perror("ftruncate"); exit(1); }
 
-    void *buf = mmap(NULL, BUFFER_SIZE,
-                    PROT_READ | PROT_WRITE,
-                    MAP_SHARED | MAP_HUGETLB,
-                    fd, 0);
+    // void *buf = mmap(NULL, BUFFER_SIZE,
+    //                 PROT_READ | PROT_WRITE,
+    //                 MAP_SHARED | MAP_HUGETLB,
+    //                 fd, 0);
+    void *buf = mmap(NULL, BUFFER_SIZE, PROT_READ | PROT_WRITE,
+        MAP_SHARED, fd, 0);  // removed MAP_HUGETLB
+
     if (buf == MAP_FAILED) { perror("mmap"); exit(1); }
 
     memset(buf, 0, BUFFER_SIZE);
