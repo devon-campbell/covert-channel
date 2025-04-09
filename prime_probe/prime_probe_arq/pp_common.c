@@ -12,7 +12,16 @@
 
 volatile char *prime_probe_lines[SET_ASSOC];
 
-/* ---------- one‑time init ------------------------------------------- */
+/* ---------- one‑time init ------------------------------------------- 
+    - Open shared memory region inside /dev/hugepages
+    - Set fd size to BUFFER_SIZE
+    - mmap the memory into vaddr space
+    - memset to ensure pages are physically mapped
+    - Find cache set matches
+        - Iter through buffer, line-by-line (64 bytes each)
+        - Get current candidate (buf + offset), isolate 6 LSB, check if matches TARGET_SET
+            - If match, append to prime_probe_lines
+*/
 void pp_init(void)
 {
     int fd = open("/dev/hugepages/pp_buf", O_CREAT | O_RDWR, 0666);
