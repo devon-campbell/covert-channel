@@ -98,12 +98,8 @@ int check_port(int port) {
 
 int send_data(const char *data, int n){
     int f_count = 0;
-    struct timespec profile_start, profile_current, chunk_start, operation_start, operation_end;
-    int wait_iterations = 0, total_chunks = 0, ports_bound = 0;
-    double total_time = 0.0, wait_time = 0.0, binding_time = 0.0;
     
     // Start overall timing
-    clock_gettime(CLOCK_REALTIME, &profile_start);
     
     int sync_send = SEND_PORT;
     int sync_recv = RECV_PORT;
@@ -116,81 +112,52 @@ int send_data(const char *data, int n){
     int open[BYTES*8] = {0};
     for(int i = 0; i < n; i += BYTES) {
         // Start timing this chunk
-        clock_gettime(CLOCK_REALTIME, &chunk_start);
-        total_chunks++;
         
         // Binding sync_send port
-        clock_gettime(CLOCK_REALTIME, &operation_start);
         int sync_fd = create_and_bind(sync_send);
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        binding_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                     (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
         
         if (sync_fd < 0) {
-            clock_gettime(CLOCK_REALTIME, &profile_current);
-            total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                       (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
             perror("Failed to create sync port");
             return -1;
         }
         
         // Closing previously open ports
-        clock_gettime(CLOCK_REALTIME, &operation_start);
-        int ports_closed = 0;
         for(int j = 0; j < BYTES*8; j++) {
             if (open[j] != 0) {
                 close(open[j]);
                 open[j] = 0;
-                ports_closed++;
             }
         }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
         
-        // Binding data ports for this chunk
-        clock_gettime(CLOCK_REALTIME, &operation_start);
-        ports_bound = 0;
         for(int j = 0; j < BYTES && (i + j) < n; j++) {
             for(int k = 7; k >= 0; k--) {
                 if ((data[i + j] & (1 << k)) == 0) {
                     int fd = create_and_bind(data_ports[j * 8 + k]);
                     if (fd < 0) {
-                        clock_gettime(CLOCK_REALTIME, &profile_current);
-                        total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                                   (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
                         perror("Failed to create data port");
                         close(sync_fd);
                         return -1;
                     }
                     open[j * 8 + k] = fd;
-                    ports_bound++;
                 }
                 else {
                     open[j * 8 + k] = 0;
                 }
             }
         }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        binding_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                     (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
         
+        struct timespec start, current;
+        clock_gettime(CLOCK_REALTIME, &start);
         // Releasing sync_send and waiting for sync_recv
-        clock_gettime(CLOCK_REALTIME, &operation_start);
         close(sync_fd);
         
         // Wait for sync_recv port to be occupied
-        wait_iterations = 0;
         int flag = 0;
         while(check_port(sync_recv)) {
-            wait_iterations++;
-            clock_gettime(CLOCK_REALTIME, &profile_current);
-            double elapsed = (profile_current.tv_sec - operation_start.tv_sec) + 
-                           (profile_current.tv_nsec - operation_start.tv_nsec) / 1e9;
-            
-            if((profile_current.tv_sec - operation_start.tv_sec) + 
-               (profile_current.tv_nsec - operation_start.tv_nsec) / 1e9 > 0.005){
-                clock_gettime(CLOCK_REALTIME, &profile_current);
-                total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                           (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
+            clock_gettime(CLOCK_REALTIME, &current);
+            if((current.tv_sec - start.tv_sec) + 
+               (current.tv_nsec - start.tv_nsec) / 1e9 > 0.005){
+                 
                 fprintf(stderr, "Timeout waiting for sync_recv port\n");
                 if (f_count > 1) {
                     return -1;
@@ -203,39 +170,8 @@ int send_data(const char *data, int n){
         if(flag == 0){
             f_count = 0;
         }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        wait_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                  (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
-        
-        // Wait for sync_recv to become available again
-        wait_iterations = 0;
-        clock_gettime(CLOCK_REALTIME, &operation_start);
-        while(!check_port(sync_recv)) {
-            wait_iterations++;
-        }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        wait_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                  (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
-        
-        // Calculate total chunk time
-        clock_gettime(CLOCK_REALTIME, &profile_current);
-        double chunk_time = (profile_current.tv_sec - chunk_start.tv_sec) + 
-                          (profile_current.tv_nsec - chunk_start.tv_nsec) / 1e9;
-        total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                   (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
     }
     
-    // Closing any remaining open ports
-    clock_gettime(CLOCK_REALTIME, &operation_start);
-    int ports_closed = 0;
-    for(int j = 0; j < BYTES*8; j++) {
-        if (open[j] != 0) {
-            close(open[j]);
-            open[j] = 0;
-            ports_closed++;
-        }
-    }
-    clock_gettime(CLOCK_REALTIME, &operation_end);
     
     return 1;
 }
@@ -250,58 +186,32 @@ Data * recv_data() {
     Data *data = make_data(100000);
     
     // Profiling variables
-    struct timespec profile_start, profile_current, loop_start, operation_start, operation_end;
-    int wait_iterations = 0, resize_count = 0, total_chunks = 0;
-    double total_time = 0.0, wait_time = 0.0, processing_time = 0.0;
     
     // Start overall timing
-    clock_gettime(CLOCK_REALTIME, &profile_start);
     
     // Wait for sync port to be occupied
-    clock_gettime(CLOCK_REALTIME, &operation_start);
-    while(check_port(sync_send)) {
-        wait_iterations++;
-    }
-    clock_gettime(CLOCK_REALTIME, &operation_end);
+    while(check_port(sync_send)) ;
     
     while(1) {
         // Start timing this chunk
-        clock_gettime(CLOCK_REALTIME, &loop_start);
-        total_chunks++;
         
         // Check if resize is needed
         if (data->length+BYTES >= data->size) {
-            resize_count++;
-            clock_gettime(CLOCK_REALTIME, &operation_start);
             data = double_data(data);
-            clock_gettime(CLOCK_REALTIME, &operation_end);
         }
         
         // Wait for sync_send to be available
-        wait_iterations = 0;
-        clock_gettime(CLOCK_REALTIME, &operation_start);
-        while(!check_port(sync_send)) {
-            wait_iterations++;
-        }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        wait_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                   (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
+        while(!check_port(sync_send)) ;
         
         // Create sync port
-        clock_gettime(CLOCK_REALTIME, &operation_start);
         int sync_fd = create_and_bind(sync_recv);
-        clock_gettime(CLOCK_REALTIME, &operation_end);
         
         if (sync_fd < 0) {
-            clock_gettime(CLOCK_REALTIME, &profile_current);
-            total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                        (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
             perror("Failed to create sync port");
             return NULL;
         }
         
         // Process data
-        clock_gettime(CLOCK_REALTIME, &operation_start);
         for(int i = 0; i < BYTES; i++){
             char current = 0;
             for(int j = 7; j >= 0; j--){
@@ -311,41 +221,24 @@ Data * recv_data() {
             data->data[data->length] = current;
             data->length++;
         }
-        clock_gettime(CLOCK_REALTIME, &operation_end);
-        processing_time = (operation_end.tv_sec - operation_start.tv_sec) + 
-                         (operation_end.tv_nsec - operation_start.tv_nsec) / 1e9;
         
-        struct timespec ts, start, current;
-        ts.tv_sec = 0;
-        ts.tv_nsec = 1000000; // .1 milliseconds
+        struct timespec start, current;
         
         // Close sync port and wait
         clock_gettime(CLOCK_REALTIME, &start);
         close(sync_fd);
         
         // Wait for sync_send port to be occupied again
-        wait_iterations = 0;
         while(check_port(sync_send)) {
-            wait_iterations++;
             clock_gettime(CLOCK_REALTIME, &current);
-            double elapsed = (current.tv_sec - start.tv_sec) + 
-                           (current.tv_nsec - start.tv_nsec) / 1e9;
             
             if(current.tv_sec - start.tv_sec > 2) {
-                clock_gettime(CLOCK_REALTIME, &profile_current);
-                total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                            (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
                 fprintf(stderr, "Timeout waiting for sync_send port\n");
                 return data;
             }
         }
 
         // Calculate total chunk time
-        clock_gettime(CLOCK_REALTIME, &profile_current);
-        double chunk_time = (profile_current.tv_sec - loop_start.tv_sec) + 
-                          (profile_current.tv_nsec - loop_start.tv_nsec) / 1e9;
-        total_time = (profile_current.tv_sec - profile_start.tv_sec) + 
-                    (profile_current.tv_nsec - profile_start.tv_nsec) / 1e9;
     }
     
     return data;
