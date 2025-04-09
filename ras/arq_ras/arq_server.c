@@ -2,7 +2,7 @@
 
 // ARQ server waits for messages from client 
 
-int main(int argv, char *argc[]){
+int main(){
     // Send a stream of bits
     void *send_address = get_client_address();
     void *receive_address = get_server_address();

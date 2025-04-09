@@ -77,6 +77,7 @@ inline bool receive_bit(void *target_address){
     
     // Compare with threshold
     bool out_bit = (avg_ret_time > threshold);
+    // printf("Out Bit: %d\n", out_bit);
 
     return out_bit;
 }
@@ -132,7 +133,7 @@ inline frame_t *receive_byte_frame(void *target_address, frame_t *frame_buf, uin
         print_frame(*frame_buf);
         return NULL;
     }
-   printf("[receive_byte_frame] Valid frame received\n");
+    printf("[receive_byte_frame] Valid frame received\n");
     print_frame(*frame_buf);
     return frame_buf;
 }
