@@ -79,7 +79,6 @@ void saturate_memory_bus_worker(int duration_us, volatile char *large_array1) {
     } while ((current.tv_sec - start.tv_sec) * 1000000 + 
             (current.tv_nsec - start.tv_nsec) / 1000 < duration_us);
     // Free the allocated memory
-    free((void*)large_array1);
 
 }
 
@@ -103,13 +102,13 @@ void saturate_memory_bus(int duration_us) {
     
     // Thread function to saturate memory bus
     void *thread_func(void *arg) {
-        saturate_memory_bus_worker(duration_us, (char*)large_array[(intptr_t)arg]);
+        saturate_memory_bus_worker(duration_us, (char*)large_array[(int)arg]);
         return NULL;
     }
     
     // Create threads
     for (int t = 0; t < N; t++) {
-        if (pthread_create(&threads[t], NULL, thread_func, (void*)(intptr_t)t) != 0) {
+        if (pthread_create(&threads[t], NULL, thread_func, (void*)(int)t) != 0) {
             perror("Failed to create thread");
         }
     }
