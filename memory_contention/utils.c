@@ -1,7 +1,7 @@
 #include "utils.h"
 
-#define SEND_TIME 500000000 // 5ms
-#define WAIT_BOUNDRY 1000000000 // 10ms
+#define SEND_TIME 50000000 // 5ms
+#define WAIT_BOUNDRY 100000000 // 10ms
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 // Function to create a new Data structure
@@ -242,6 +242,7 @@ Data * recv_data(int len) {
         
         
         data->data[data->length++] = byte;
+        printf("Received byte: %c\n", byte); 
         if (data->length >= data->size) {
             data = double_data(data);
         }
