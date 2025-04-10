@@ -77,8 +77,9 @@ roughly average the two experimental values.
 
 The theoretical bandwidth is limited only by the speed of the nested function invocations and timing logic. At their
 most optimized, the bare-bones recursive calls and system timestamp calls required to make this method
-work should run on the order of tens of cycles per bit. Conservatively assuming 20 cycles per bit, we
-can compute the expected bandwidth for a 2.6 GHz processor of 2.6 GHz / 20 = 130 kb/s.
+work should run on the order of tens of cycles per bit. For an even mix of ones and zeros, we expect the per-
+bit execution time in cycles to be roughly 150 (~100 for 0s, ~200 for 1s; per the benchmark data). We 
+can then compute the expected bandwidth for a 2.6 GHz processor of 2.6 GHz / 150 = 17 kb/s.
 
 ### More Advanced Transmission
 To test the channel's effectiveness with more sophisticated loads, we wrap the basic channel
