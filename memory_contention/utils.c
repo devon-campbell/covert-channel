@@ -97,12 +97,14 @@ void saturate_memory_bus_worker(int duration_us) {
             // Random stride access to ensure DRAM reads
             int idx = (rand() % (LARGE_ARRAY_SIZE - 4096)) & ~0x3F;  // Align to 64 bytes
             dummy ^= large_array1[idx];  // Force read and prevent optimization
-            idx = (rand() % (LARGE_ARRAY_SIZE - 4096)) & ~0x3F;  // Align to 64 bytes
             dummy ^= large_array2[idx];  // Force read and prevent optimization
         }
         clock_gettime(CLOCK_MONOTONIC, &current);
     } while ((current.tv_sec - start.tv_sec) * 1000000 + 
             (current.tv_nsec - start.tv_nsec) / 1000 < duration_us);
+    // Free the allocated memory
+    free((void*)large_array1);
+    free((void*)large_array2);
 }
 
 void saturate_memory_bus(int duration_us) {
