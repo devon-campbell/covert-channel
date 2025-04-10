@@ -105,6 +105,9 @@ void saturate_memory_bus_worker(int duration_us) {
     // Free the allocated memory
     free((void*)large_array1);
     free((void*)large_array2);
+    large_array1 = NULL;
+    large_array2 = NULL;
+
 }
 
 void saturate_memory_bus(int duration_us) {
@@ -112,7 +115,7 @@ void saturate_memory_bus(int duration_us) {
                 
     // Thread function to saturate memory bus
     void *thread_func(void *arg) {
-        saturate_memory_bus(SEND_TIME / N);
+        saturate_memory_bus_worker(duration_us);
         return NULL;
     }
     
