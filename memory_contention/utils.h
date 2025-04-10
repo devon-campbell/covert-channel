@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdint.h>
+#include <pthread.h>
 
 // Constants for DRAM covert channel
 #define DRAM_THRESHOLD_NS 200     // Threshold for distinguishing between fast/slow memory access

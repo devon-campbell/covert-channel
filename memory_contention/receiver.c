@@ -14,7 +14,7 @@
 
 
 int main(){
-    Data *data = recv_data();
+    Data *data = recv_data(100000000);
     // printf("Received data length: %d\n", data->length);
     for(int i = 0; i < data->length; i++){
         printf("%c", data->data[i]);

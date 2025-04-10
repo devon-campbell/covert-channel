@@ -2,7 +2,7 @@
 
 #define SEND_TIME 500000 // 5ms
 #define WAIT_BOUNDRY 1000000 // 10ms
-
+#define N 2
 // Function to create a new Data structure
 Data *make_data(int initial_size) {
     Data *data = (Data *)malloc(sizeof(Data));
@@ -57,7 +57,7 @@ void wait_for_time_boundary(int boundary_ns) {
     }
 }
 // New function to saturate memory bus with DRAM reads
-void saturate_memory_bus(int duration_us) {
+void saturate_memory_bus_worker(int duration_us) {
     // Create a large array that exceeds cache size
     // Using volatile to prevent compiler optimizations
     #define LARGE_ARRAY_SIZE (1024 * 1024 * 1024)  // 1GB - likely exceeds cache
@@ -103,6 +103,28 @@ void saturate_memory_bus(int duration_us) {
         clock_gettime(CLOCK_MONOTONIC, &current);
     } while ((current.tv_sec - start.tv_sec) * 1000000 + 
             (current.tv_nsec - start.tv_nsec) / 1000 < duration_us);
+}
+
+void saturate_memory_bus(int duration_us) {
+    pthread_t threads[N];
+                
+    // Thread function to saturate memory bus
+    void *thread_func(void *arg) {
+        saturate_memory_bus(SEND_TIME / N);
+        return NULL;
+    }
+    
+    // Create threads
+    for (int t = 0; t < N; t++) {
+        if (pthread_create(&threads[t], NULL, thread_func, NULL) != 0) {
+            perror("Failed to create thread");
+        }
+    }
+    
+    // Join threads
+    for (int t = 0; t < N; t++) {
+        pthread_join(threads[t], NULL);
+    }
 }
 
 // Helper function to measure DRAM access time
