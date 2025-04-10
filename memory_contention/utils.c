@@ -2,6 +2,7 @@
 
 #define SEND_TIME 50000000 // 5ms
 #define WAIT_BOUNDRY 100000000 // 10ms
+#define START_BOUNDRY 100000000 * 5 // 10s
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 // Function to create a new Data structure
@@ -167,7 +168,9 @@ uint64_t measure_dram_access_time() {
 
 // Modified function to send data through the DRAM contention channel
 int send_data(const char *data, int n) {
+    wait_for_time_boundary(10);
     
+    wait_for_time_boundary(START_BOUNDRY);
     
     // Send data in chunks
     for (int i = 0; i < n; i++) {
@@ -200,12 +203,13 @@ int send_data(const char *data, int n) {
 
 // Modified function to receive data through the DRAM contention channel
 Data * recv_data(int len) {
+    uint64_t access_time = measure_dram_access_time();
+    wait_for_time_boundary(START_BOUNDRY);
     
     
     Data *data = make_data(1024);  // Initial buffer size
     
     int last_byte_marker = -1;
-    
     while (1) {
         char byte = 0;
         
