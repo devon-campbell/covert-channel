@@ -273,7 +273,7 @@ Data * recv_data(int len) {
 
             uint64_t average_time = total_time / count;
 
-            // printf("Average access time: %lu \n", average_time);
+            printf("Average access time: %lu \n", average_time);
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
