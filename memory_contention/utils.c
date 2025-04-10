@@ -5,6 +5,7 @@
 #define START_BOUNDRY 100000000 * 5 // 10s
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
+#define START 61680
 // Function to create a new Data structure
 Data *make_data(int initial_size) {
     Data *data = (Data *)malloc(sizeof(Data));
@@ -169,8 +170,19 @@ uint64_t measure_dram_access_time() {
 // Modified function to send data through the DRAM contention channel
 int send_data(const char *data, int n) {
     wait_for_time_boundary(10);
+    int thing = START;
+    for(int x = 0; x < 32; x++){
+        wait_for_time_boundary(WAIT_BOUNDRY);
+        if(thing & (1<<(31-x))){
+            // For '1' bit: saturate memory bus
+            saturate_memory_bus(SEND_TIME);  // Saturate for SEND_TIME
+        } else {
+            // For '0' bit: do not saturate memory bus
+            // This is a no-op, just wait for the time boundary
+            wait_for_time_boundary(SEND_TIME);
+        }
+    }
     
-    wait_for_time_boundary(START_BOUNDRY);
     
     // Send data in chunks
     for (int i = 0; i < n; i++) {
@@ -204,8 +216,36 @@ int send_data(const char *data, int n) {
 // Modified function to receive data through the DRAM contention channel
 Data * recv_data(int len) {
     uint64_t access_time = measure_dram_access_time();
-    wait_for_time_boundary(START_BOUNDRY);
-    
+    wait_for_time_boundary(WAIT_BOUNDRY);
+    // Measure DRAM access time
+    struct timespec start, current;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    uint64_t total_time = 0;
+    int count = 0;
+
+    int thing = 0;
+    while(thing != START){
+        do {
+            uint64_t access_time = measure_dram_access_time();
+            total_time += access_time;
+            count++;
+            clock_gettime(CLOCK_MONOTONIC, &current);
+        } while ((current.tv_sec - start.tv_sec) * 1000000000L + 
+                    (current.tv_nsec - start.tv_nsec) < SEND_TIME);
+
+        uint64_t average_time = total_time / count;
+
+        printf("Average access time: %lu \n", average_time);
+        
+        
+        // IMPORTANT: Inverted logic - slow means '1', fast means '0'
+        thing = thing << 1;
+        if (average_time > DRAM_THRESHOLD_NS) {
+            // Slow access means memory bus contention, interpret as '1'
+            
+            thing |= 1;
+        }
+    }
     
     Data *data = make_data(1024);  // Initial buffer size
     
@@ -226,7 +266,6 @@ Data * recv_data(int len) {
                 uint64_t access_time = measure_dram_access_time();
                 total_time += access_time;
                 count++;
-
                 clock_gettime(CLOCK_MONOTONIC, &current);
             } while ((current.tv_sec - start.tv_sec) * 1000000000L + 
                      (current.tv_nsec - start.tv_nsec) < SEND_TIME);
@@ -243,7 +282,6 @@ Data * recv_data(int len) {
             }
             // Fast access means no contention, interpret as '0'
             
-            // Mark bit as received
         }
         
         
