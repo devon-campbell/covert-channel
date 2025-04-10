@@ -1,7 +1,7 @@
 #include "utils.h"
 
-#define SEND_TIME 50000000 // 5ms
-#define WAIT_BOUNDRY 100000000 // 10ms
+#define SEND_TIME 50000 // 5ms
+#define WAIT_BOUNDRY 100000 // 10ms
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 #define START 61680
@@ -199,7 +199,6 @@ int send_data(const char *data, int n) {
             } else {
                 // For '0' bit: do not saturate memory bus
                 // This is a no-op, just wait for the time boundary
-                wait_for_time_boundary(SEND_TIME);
             }
             
             
