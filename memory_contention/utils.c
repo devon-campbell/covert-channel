@@ -1,7 +1,7 @@
 #include "utils.h"
 
-#define SEND_TIME 5000 // 5ms
-#define WAIT_BOUNDRY 10000 // 10ms
+#define SEND_TIME 500000 // 5ms
+#define WAIT_BOUNDRY 1000000 // 10ms
 
 // Function to create a new Data structure
 Data *make_data(int initial_size) {
