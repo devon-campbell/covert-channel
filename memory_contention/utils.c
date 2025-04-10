@@ -62,7 +62,6 @@ void saturate_memory_bus_worker(int duration_us) {
     // Using volatile to prevent compiler optimizations
     #define LARGE_ARRAY_SIZE (1024 * 1024 * 1024)  // 1GB - likely exceeds cache
     static volatile char* large_array1 = NULL;
-    static volatile char* large_array2 = NULL;
     
     // Allocate on first use
     if (large_array1 == NULL) {
@@ -76,17 +75,6 @@ void saturate_memory_bus_worker(int duration_us) {
             large_array1[i] = (char)i;
         }
     }
-    if (large_array2 == NULL) {
-        large_array2 = (volatile char*)malloc(LARGE_ARRAY_SIZE);
-        if (large_array2 == NULL) {
-            perror("Failed to allocate memory 2 for bus saturation");
-            return;
-        }
-        // Initialize array
-        for (int i = 0; i < LARGE_ARRAY_SIZE; i++) {
-            large_array2[i] = (char)i;
-        }
-    }
     // Read from random positions to avoid cache pattern prediction
     char dummy = 0;
     struct timespec start, current;
@@ -97,7 +85,6 @@ void saturate_memory_bus_worker(int duration_us) {
             // Random stride access to ensure DRAM reads
             int idx = (rand() % (LARGE_ARRAY_SIZE - 4096)) & ~0x3F;  // Align to 64 bytes
             dummy ^= large_array1[idx];  // Force read and prevent optimization
-            dummy ^= large_array2[idx];  // Force read and prevent optimization
         }
         clock_gettime(CLOCK_MONOTONIC, &current);
     } while ((current.tv_sec - start.tv_sec) * 1000000 + 
