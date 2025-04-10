@@ -116,3 +116,10 @@ There are two relevant subdirectories in this directory.
 - `arq_server` - the ARQ server; listens for and acknowledges incoming messages. Run using `taskset -c 0 ./arq_server`
 - `send_bitstream` - Repeatedly sends a bitstream to the listener function. Run using `taskset -c 0 ./send_bitstream <bitstream>`
 - `receive_bistream` - Constantly listens for incoming bitstream. Run using `taskset -c 0 ./receive_bitstream`
+
+## Cloud Instance Parameters
+```
+machine-type: n2-standard-2
+CPU Platform: Intel Cascade Lake
+Architecture: x86/64
+```
