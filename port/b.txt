@@ -1,0 +1,5 @@
+Data length: 524288
+Data sent successfully.
+Time taken to send data: 4.774 seconds
+Data size: 524288 bytes
+Transfer rate: 109810.418 bytes/second
