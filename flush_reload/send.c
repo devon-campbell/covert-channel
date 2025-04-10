@@ -22,7 +22,7 @@ inline void send_bit(void *target_address, bool bit)
             ;
     }
 
- //   print_bit(bit, "Sent: ");
+    //   print_bit(bit, "Sent: ");
 }
 
 // Send a stream of bits
@@ -51,5 +51,4 @@ inline void send_byte_frame(void *target_address, uint8_t byte)
     // // Print the frame for debugging
     // print_frame(frame);
     printf("[send_byte_frame] Sent byte: %x\n", byte);
-
 }

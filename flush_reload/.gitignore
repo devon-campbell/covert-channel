@@ -5,3 +5,4 @@ send_bitstream
 send_bytestream
 receive_bitstream
 receive_bytestream
+.venv

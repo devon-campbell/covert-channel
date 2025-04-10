@@ -23,7 +23,7 @@ send.o: send.h
 receive.o: receive.h
 	gcc $(CFLAGS) -c receive.c
 
-frame_channel.o: frame_channel.c send.h receive.h
+frame_channel.o: frame_channel.c send.h receive.h frame_channel.h
 	gcc $(CFLAGS) -c frame_channel.c send.o receive.o
 
 send_bitstream: send_bitstream.c print_utils.h send.h send.o
@@ -47,7 +47,7 @@ arq_server: arq_server.c print_utils.h send.h receive.h send.o receive.o frame_c
 clean:
 	rm -f threshold sender receiver *.o receive_bitstream send_bitstream arq_client arq_server send_bytestream receive_bytestream
 
-all: send_bitstream receive_bitstream send_bytestream receive_bytestream arq_client arq_server
+all: clean send_bitstream receive_bitstream send_bytestream receive_bytestream arq_client arq_server
 
 
 

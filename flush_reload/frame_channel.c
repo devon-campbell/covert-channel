@@ -213,7 +213,7 @@ arq_frame_t *receive_arq_frame(void *receive_address, void *send_address, arq_fr
         
         // Send ACK for the received byte
         arq_frame_t ack_frame = construct_arq_frame(byte, received_seq_num);
-        send_raw_arq_frame(receive_address, ack_frame); // Acknowledge the received byte
+        send_raw_arq_frame(send_address, ack_frame); // Acknowledge the received byte
 
         printf("---------------------[receive_arq_frame] Valid frame received and ACK'd, moving on (seq_num=%d, byte=%x)------------------\n", received_seq_num, byte);
 
