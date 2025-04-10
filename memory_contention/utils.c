@@ -94,9 +94,7 @@ void saturate_memory_bus(int duration_us) {
             return;
         }
         // Initialize array
-        for (int j = 0; j < LARGE_ARRAY_SIZE; j++) {
-            large_array[i][j] = (char)j;
-        }
+       
     }
     }
     
