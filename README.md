@@ -12,11 +12,11 @@ We met twice over the course of the assignment and communicated progress asynchr
 (Hardware specs & any information required for reproducing your results)
 
 ### Technique 2: Prime + Probe
-This implementation demonstrates a microarchitectural covert channel leveraging the Prime+Probe cache side-channel technique to transmit information stealthily between a sender and receiver. At a high level, the sender and receiver coordinate by repeatedly targeting a specific set in the CPU's last-level cache (LLC). The sender encodes bits by selectively evicting cache lines: a logical `1` bit is represented by aggressively evicting cache lines (thus causing cache misses), while a `0` bit is indicated by idling (allowing cache hits). 
+This project implements a microarchitectural covert channel using the Prime+Probe cache side-channel technique to transmit data between isolated processes. The sender and receiver coordinate by targeting a shared last-level cache (LLC) set. To transmit a bit, the sender either evicts the cache set (encoding a `1`) or remains idle (encoding a `0`). The receiver probes the same set and infers the transmitted bit by measuring access latency: high latency implies eviction (`1`), low latency implies no eviction (`0`).
 
-Concurrently, the receiver probes the same cache set by measuring access latencies to a carefully chosen eviction set. Elevated latency indicates sender-induced cache misses (interpreted as bit `1`), whereas low latency indicates the absence of eviction activity (interpreted as bit `0`). Synchronization between sender and receiver is achieved using the processor's timestamp counter (rdtscp instruction) to align their time slots precisely. An Automatic Repeat reQuest (ARQ) protocol overlays this channel to ensure reliability, detect errors, and manage retransmissions. The result is a covert communication mechanism exploiting microarchitectural timing variations invisible to conventional monitoring tools.
+Synchronization is achieved using the processor’s timestamp counter (`rdtscp`), with both parties aligning to defined time slots via a `SLOT_MASK`. Shared cache set contention is ensured by selecting memory addresses that map to a specific LLC set (`TARGET_SET`) using large page mappings (`/dev/hugepages`), which also reduce TLB misses and improve physical address predictability.
 
-(Why believed technique would work)
+To add reliability, the channel uses an Automatic Repeat reQuest (ARQ) protocol. Each frame includes start delimiters, parity bits, and sequence numbers, enabling the receiver to detect errors, discard stale frames, and request retransmissions. Together, these design choices allow for robust, stealthy communication via cache timing variations, without requiring shared memory or direct interprocess communication.
 
 #### Bandwidth
 ##### Expected
