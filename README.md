@@ -121,7 +121,7 @@ return address stack. To maximize the covert channel's accuracy, we will want to
 the receiving process to be nested exactly as deeply as the RAS is. This is the point at which the difference in return times is largest. RAS size can be 
 benchmarked by timing execution time for increasingly nested functions and identifying the inflection point where the additional execution time per level of nesting increases. A graph is shown below, showing the time to return from a nested function with no other overhead. 
 
-![Execution Time vs. Recursion Depth](/ras/images/cloud_results.png)
+![Execution Time vs. Recursion Depth](./ras/images/cloud-results.png)
 
 On the Google Cloud Instance, the RAS capacity is 16.
 
