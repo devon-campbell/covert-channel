@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 // Constants for DRAM covert channel
-#define DRAM_THRESHOLD_NS 200     // Threshold for distinguishing between fast/slow memory access
+#define DRAM_THRESHOLD_NS 5000     // Threshold for distinguishing between fast/slow memory access
 #define SHARED_MEM_SIZE 4096      // Size of shared memory region
 #define SHARED_MEM_NAME "/dram_covert_channel"  // Name of shared memory region
 

@@ -121,7 +121,7 @@ void saturate_memory_bus(int duration_us) {
 // Helper function to measure DRAM access time
 uint64_t measure_dram_access_time() {
     // Create a larger array that won't fit entirely in cache
-    #define TEST_ARRAY_SIZE (8 * 1024 * 1024)  // 8MB
+    #define TEST_ARRAY_SIZE (512 * 1024 * 1024)  // 512MB
     static volatile char* test_array = NULL;
     
     // Allocate on first use
