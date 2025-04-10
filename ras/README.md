@@ -15,7 +15,7 @@ process.
 ### Implementation
 To flesh out the covert channel implementation, we first need to know the size of the 
 return address stack. To maximize the covert channel's accuracy, we will want to configure 
-the receiving process to be nested exactly as deeply as the RAS is. RAS size can be 
+the receiving process to be nested exactly as deeply as the RAS is. This is the point at which the difference in return times is largest. RAS size can be 
 benchmarked by timing execution time for increasingly nested functions and identifying the inflection point where the additional execution time per level of nesting increases. A graph is shown below. 
 
 [INSERT GRAPH]
