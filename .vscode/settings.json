@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "x86intrin.h": "c",
+        "stdlib.h": "c",
+        "socket.h": "c",
+        "types.h": "c",
+        "time.h": "c",
+        "in.h": "c",
+        "unistd.h": "c",
+        "errno.h": "c"
+    }
+}

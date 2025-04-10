@@ -17,6 +17,11 @@ test: test.o $(OBJS)
 test1: test1.o $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+sender: sender.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+receiver: receiver.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 # Object files
 utils.o: utils.c utils.h
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -29,6 +34,13 @@ test1.o: test1.c utils.h
 
 test1.o: test1.c utils.h
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+sender.o: sender.c utils.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+receiver.o: receiver.c utils.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 
 clean:
 	rm -f $(EXECS) *.o
