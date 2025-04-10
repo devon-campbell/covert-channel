@@ -96,6 +96,7 @@ void saturate_memory_bus_worker(int duration_us) {
 }
 
 void saturate_memory_bus(int duration_us) {
+    printf("Saturating memory bus for %d microseconds...\n", duration_us);
     pthread_t threads[N];
                 
     // Thread function to saturate memory bus
