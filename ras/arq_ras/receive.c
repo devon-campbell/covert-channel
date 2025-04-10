@@ -65,8 +65,7 @@ inline bool receive_bit(void *target_address){
     uint32_t return_time;
 
     // Check until time step B
-    while (!is_half_point())
-    {
+    while (!is_half_point()){
         return_time = recurse_and_yield(RAS_SIZE, 0);
         total_ret_time += return_time;
         total_returns++;

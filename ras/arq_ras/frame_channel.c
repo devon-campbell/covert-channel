@@ -54,14 +54,7 @@ inline arq_frame_t *receive_raw_arq_frame(void *target_address, arq_frame_t *fra
         // Shift in the next bit
         shift_reg = (shift_reg << 1) | receive_bit(target_address);
 
-        // Print shift register in binary
-        // printf("Shift register: ");
-        // for (int i = 7; i >= 0; i--) {
-        //     printf("%d", (shift_reg >> i) & 1);
-        // }
-        // printf("\n");
-
-        fflush(stdout);
+        // fflush(stdout);
         // Check for start delimiter (0b10011010)
         if (shift_reg == START_DELIMITER)
         {

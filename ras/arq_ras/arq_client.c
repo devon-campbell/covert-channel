@@ -5,8 +5,7 @@
 
 // ARQ client sends messages to server 
 
-int main(int argv, char *argc[])
-{
+int main(int argv, char *argc[]){
     // Check if the user provided a target address
     if (argv < 2)
     {
