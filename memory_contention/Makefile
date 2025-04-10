@@ -6,7 +6,7 @@ LDFLAGS = -lrt
 OBJS = utils.o
 
 # Executables
-EXECS = test test1
+EXECS = sender receiver
 
 all: $(EXECS)
 
