@@ -216,13 +216,15 @@ int send_data(const char *data, int n) {
 Data * recv_data(int len) {
     uint64_t access_time = measure_dram_access_time();
     // Measure DRAM access time
-    struct timespec start, current;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    uint64_t total_time = 0;
-    int count = 0;
+    
+    
 
     int thing = 0;
     while(thing != START){
+        struct timespec start, current;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        uint64_t total_time = 0;
+        int count = 0;
         wait_for_time_boundary(WAIT_BOUNDRY);
         do {
             uint64_t access_time = measure_dram_access_time();
