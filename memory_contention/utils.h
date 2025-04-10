@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 // Constants for DRAM covert channel
-#define DRAM_THRESHOLD_NS 10000     // Threshold for distinguishing between fast/slow memory access
+#define DRAM_THRESHOLD_NS 8000     // Threshold for distinguishing between fast/slow memory access
 
 // Structure for storing received data
 typedef struct {

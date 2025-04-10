@@ -1,8 +1,8 @@
 #include "utils.h"
 
-#define SEND_TIME 5000000 // 5ms
-#define WAIT_BOUNDRY 10000000 // 10ms
-#define N 2
+#define SEND_TIME 4000000 // 5ms
+#define WAIT_BOUNDRY 8000000 // 10ms
+#define N 3
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 #define START 61680
 // Function to create a new Data structure
@@ -250,7 +250,6 @@ Data * recv_data(int len) {
     
     Data *data = make_data(1024);  // Initial buffer size
     
-    int last_byte_marker = -1;
     while (1) {
         char byte = 0;
         
@@ -273,7 +272,7 @@ Data * recv_data(int len) {
 
             uint64_t average_time = total_time / count;
 
-            printf("Average access time: %lu \n", average_time);
+            //printf("Average access time: %lu \n", average_time);
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
