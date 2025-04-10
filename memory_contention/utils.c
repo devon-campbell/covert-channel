@@ -244,7 +244,11 @@ Data * recv_data(int len) {
         
         
         data->data[data->length++] = byte;
-        printf("Received byte: %c\n", byte); 
+        printf("Received byte: %c (", byte);
+        for (int bit = 7; bit >= 0; bit--) {
+            printf("%d", (byte >> bit) & 1);
+        }
+        printf(")\n");
         if (data->length >= data->size) {
             data = double_data(data);
         }
