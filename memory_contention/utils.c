@@ -1,7 +1,7 @@
 #include "utils.h"
 
-#define SEND_TIME 50000 // 5ms
-#define WAIT_BOUNDRY 100000 // 10ms
+#define SEND_TIME 5000000 // 5ms
+#define WAIT_BOUNDRY 10000000 // 10ms
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 #define START 61680
@@ -120,7 +120,7 @@ void saturate_memory_bus(int duration_ns) {
 // Helper function to measure DRAM access time
 uint64_t measure_dram_access_time() {
     // Create a larger array that won't fit entirely in cache
-    #define TEST_ARRAY_SIZE (512 * 1024 * 1024)  // 512MB
+    #define TEST_ARRAY_SIZE (64 * 1024 * 1024)  // 64MB
     static volatile char* test_array = NULL;
     
     // Allocate on first use
@@ -197,8 +197,9 @@ int send_data(const char *data, int n) {
                 // For '1' bit: saturate memory bus
                 saturate_memory_bus(SEND_TIME);  // Saturate for SEND_TIME
             } else {
+                
                 // For '0' bit: do not saturate memory bus
-                // This is a no-op, just wait for the time boundary
+                wait_for_time_boundary(SEND_TIME); // Wait for the time boundary
             }
             
             

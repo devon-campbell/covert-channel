@@ -13,9 +13,19 @@
 
 
 
-int main(){
-    Data *data = recv_data(100000000);
-    // printf("Received data length: %d\n", data->length);
+int main(int argc, char *argv[]){
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <length>\n", argv[0]);
+        return 1;
+    }
+
+    int length = atoi(argv[1]);
+    if (length <= 0) {
+        fprintf(stderr, "Invalid length: %s\n", argv[1]);
+        return 1;
+    }
+
+    Data *data = recv_data(length);
     for(int i = 0; i < data->length; i++){
         printf("%c", data->data[i]);
     }
