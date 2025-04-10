@@ -60,8 +60,8 @@ void wait_for_time_boundary(int boundary_ns) {
 void saturate_memory_bus_worker(int duration_us) {
     // Create a large array that exceeds cache size
     // Using volatile to prevent compiler optimizations
-    #define LARGE_ARRAY_SIZE (1024 * 1024 * 32)  // 1GB - likely exceeds cache
-    static volatile char* large_array1 = NULL;
+    #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
+    volatile char* large_array1 = NULL;
     
     // Allocate on first use
     if (large_array1 == NULL) {
