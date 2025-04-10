@@ -1,7 +1,7 @@
 #include "utils.h"
 
-#define SEND_TIME 500000 // 5ms
-#define WAIT_BOUNDRY 1000000 // 10ms
+#define SEND_TIME 500000000 // 5ms
+#define WAIT_BOUNDRY 1000000000 // 10ms
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 // Function to create a new Data structure
@@ -47,7 +47,7 @@ void wait_for_time_boundary(int boundary_ns) {
     clock_gettime(CLOCK_MONOTONIC, &current);
 
     long current_ns = current.tv_sec * 1000000000L + current.tv_nsec;
-    long target_ns = ((current_ns / boundary_ns) + 1) * boundary_ns;
+    long target_ns = ((current_ns / (boundary_ns)) + 1) * (boundary_ns);
 
     while (1) {
         clock_gettime(CLOCK_MONOTONIC, &current);
@@ -58,7 +58,7 @@ void wait_for_time_boundary(int boundary_ns) {
     }
 }
 // New function to saturate memory bus with DRAM reads
-void saturate_memory_bus_worker(int duration_us, volatile char *large_array1) {
+void saturate_memory_bus_worker(int duration_ns, volatile char *large_array1) {
     // Create a large array that exceeds cache size
     // Using volatile to prevent compiler optimizations
     
@@ -76,14 +76,13 @@ void saturate_memory_bus_worker(int duration_us, volatile char *large_array1) {
             dummy ^= large_array1[idx];  // Force read and prevent optimization
         }
         clock_gettime(CLOCK_MONOTONIC, &current);
-    } while ((current.tv_sec - start.tv_sec) * 1000000 + 
-            (current.tv_nsec - start.tv_nsec) / 1000 < duration_us);
+    } while ((current.tv_sec - start.tv_sec) * 1000000000 + 
+            (current.tv_nsec - start.tv_nsec) < duration_ns);
     // Free the allocated memory
 
 }
 
-void saturate_memory_bus(int duration_us) {
-    printf("Saturating memory bus for %d microseconds...\n", duration_us);
+void saturate_memory_bus(int duration_ns) {
     pthread_t threads[N];
     static volatile char* large_array[N] = {NULL};
     for(int i = 0; i < N; i++) {
@@ -100,7 +99,7 @@ void saturate_memory_bus(int duration_us) {
     
     // Thread function to saturate memory bus
     void *thread_func(void *arg) {
-        saturate_memory_bus_worker(duration_us, (char*)large_array[(int)arg]);
+        saturate_memory_bus_worker(duration_ns, (char*)large_array[(int)arg]);
         return NULL;
     }
     
@@ -184,7 +183,9 @@ int send_data(const char *data, int n) {
                 // For '1' bit: saturate memory bus
                 saturate_memory_bus(SEND_TIME);  // Saturate for SEND_TIME
             } else {
-                continue; 
+                // For '0' bit: do not saturate memory bus
+                // This is a no-op, just wait for the time boundary
+                wait_for_time_boundary(SEND_TIME);
             }
             
             
@@ -226,7 +227,7 @@ Data * recv_data(int len) {
                      (current.tv_nsec - start.tv_nsec) < SEND_TIME);
 
             uint64_t average_time = total_time / count;
-            printf("Average access time: %lu ns\n", average_time);
+            // printf("Average access time: %lu ns\n", average_time);
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
