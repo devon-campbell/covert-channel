@@ -2,7 +2,6 @@
 
 #define SEND_TIME 50000000 // 5ms
 #define WAIT_BOUNDRY 100000000 // 10ms
-#define START_BOUNDRY 100000000 * 5 // 10s
 #define N 2
 #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 #define START 61680
@@ -216,7 +215,6 @@ int send_data(const char *data, int n) {
 // Modified function to receive data through the DRAM contention channel
 Data * recv_data(int len) {
     uint64_t access_time = measure_dram_access_time();
-    wait_for_time_boundary(WAIT_BOUNDRY);
     // Measure DRAM access time
     struct timespec start, current;
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -225,6 +223,7 @@ Data * recv_data(int len) {
 
     int thing = 0;
     while(thing != START){
+        wait_for_time_boundary(WAIT_BOUNDRY);
         do {
             uint64_t access_time = measure_dram_access_time();
             total_time += access_time;
@@ -235,7 +234,7 @@ Data * recv_data(int len) {
 
         uint64_t average_time = total_time / count;
 
-        printf("Average access time: %lu \n", average_time);
+        // printf("Average access time: %lu \n", average_time);
         
         
         // IMPORTANT: Inverted logic - slow means '1', fast means '0'
@@ -272,7 +271,7 @@ Data * recv_data(int len) {
 
             uint64_t average_time = total_time / count;
 
-            printf("Average access time: %lu \n", average_time);
+            // printf("Average access time: %lu \n", average_time);
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
