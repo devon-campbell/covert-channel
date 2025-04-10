@@ -20,11 +20,12 @@ inline void send_bit(void* target_address, bool bit){
     if (bit){
         // Send until time step B
         while (!is_half_point()){
+            sched_yield();
             flush_ras(0, RAS_SIZE);
         }
     }else{
         while (!is_half_point())
-                ;
+            sched_yield();
     }
 }
 

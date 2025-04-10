@@ -1,5 +1,6 @@
 #include "print_utils.h"
 #include "send.h"
+#include <unistd.h>
 
 int main(int argv, char *argc[])
 {
@@ -44,8 +45,7 @@ int main(int argv, char *argc[])
     while (1)
     {
         // Send the bitstream
-        for (size_t i = 0; i < bitstream_len; i++)
-        {
+        for (size_t i = 0; i < bitstream_len; i++){
             send_bit(target_address, bitstream_bytes[i]);
             // Print the sent bit
             print_bit(bitstream_bytes[i], "Sent: ");
