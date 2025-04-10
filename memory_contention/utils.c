@@ -190,6 +190,7 @@ int send_data(const char *data, int n) {
             
             
         }
+        printf("Sent byte: %c\n", byte);
         
     }
     
@@ -227,7 +228,8 @@ Data * recv_data(int len) {
                      (current.tv_nsec - start.tv_nsec) < SEND_TIME);
 
             uint64_t average_time = total_time / count;
-            // printf("Average access time: %lu ns\n", average_time);
+
+            printf("Average access time: %lu \n", average_time);
             
             
             // IMPORTANT: Inverted logic - slow means '1', fast means '0'
