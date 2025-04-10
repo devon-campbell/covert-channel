@@ -234,8 +234,11 @@ Architecture: x86/64
 ## Description
 This covert chanel tenique uses communication via occupying network ports to communicate between two processes from different users.
 
+### Why we thought it would work:
+When one process occupyies a port, and there  is no obsufacation of port numbers or anything of that sort between different users on a VM, as knowing exactly what hardware port your machine is listening on is critical. There are certian socket flags you can set to make it very fast to reserve and release a port, making it suitable for high bandwidth communication.
+
 ## Usage
-first make the code
+first make the code.
 ```bash 
 make
 ```
@@ -268,6 +271,13 @@ The reciever will wait for the sender port to be released, then will read the da
 * The fewer data ports you use, the worse performance is, both in terms of reliability and speed, as the fast switching on the port requires more coordination that is more likely to fail.
 
 ## Performance
+
+### Expected bandwidth:
+Based on some preliminary testing, we believed that port switching about 50000 times per second would be possible, so then bandwitdh would scale linearly with the number of ports used (-2 for the syncing ports)
+
+### Actual bandwidth:
+The actual bandwidth scaled loosly with the number of data ports, but the actual limiting factor was not some os construct that limited how fast they could switch, but rather all the cleanup and data structure managment that the OS has to do to open or release a port, which means that increasing the number of ports only increases the bandwidth up to a point, as the processor cant keep up with managing larger numbers, so it slows down. That said, using more than 64 ports we were able to achieve speeds in excess of 150 kbs.
+
 The only type of error that occers is when the sender or reciever is not fast enough, times out, and in the programs recovery the reciever gets the same block of data twice or not at all.
 That said, this is very very rare, happening 0 or 1 times in sending a half a kilobyte file with 256 data ports. The error rate is < 0.01% for 256 data ports, which stays consistant for large files.
 With fewer data ports, this number tends to go up, as well as the speed going down, as shown below
@@ -275,3 +285,11 @@ With fewer data ports, this number tends to go up, as well as the speed going do
 ![Performance Chart](images/Screenshot%202025-04-09%20194414.png)
 
 These tests were performed sending a 32 kb file twice, with average miss rate (per bit) and average bits per second shown.
+
+## Cloud Instance Parameters
+```
+n4-standard-4 (4 vCPUs, 16 GB Memory)
+CPU platform: Intel Emerald Rapids
+Architecture: x86/64
+```
+This was the artecture testing was performed on, but there is nothing to indicate that any two processes on any type of machine that have accesses to the same network interface could not communicate this way. One important factor is that speed is dependant on single core clock speeds, ony my laptop I was able to get faster speeds, and on slower remotes speeds were worse than what is shown.
