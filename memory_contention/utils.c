@@ -3,6 +3,7 @@
 #define SEND_TIME 500000 // 5ms
 #define WAIT_BOUNDRY 1000000 // 10ms
 #define N 2
+#define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
 // Function to create a new Data structure
 Data *make_data(int initial_size) {
     Data *data = (Data *)malloc(sizeof(Data));
@@ -57,24 +58,12 @@ void wait_for_time_boundary(int boundary_ns) {
     }
 }
 // New function to saturate memory bus with DRAM reads
-void saturate_memory_bus_worker(int duration_us) {
+void saturate_memory_bus_worker(int duration_us, volatile char *large_array1) {
     // Create a large array that exceeds cache size
     // Using volatile to prevent compiler optimizations
-    #define LARGE_ARRAY_SIZE (1024 * 1024 * 512)  // 1GB - likely exceeds cache
-    volatile char* large_array1 = NULL;
     
     // Allocate on first use
-    if (large_array1 == NULL) {
-        large_array1 = (volatile char*)malloc(LARGE_ARRAY_SIZE);
-        if (large_array1 == NULL) {
-            perror("Failed to allocate memory for bus saturation");
-            return;
-        }
-        // Initialize array
-        for (int i = 0; i < LARGE_ARRAY_SIZE; i++) {
-            large_array1[i] = (char)i;
-        }
-    }
+    
     // Read from random positions to avoid cache pattern prediction
     char dummy = 0;
     struct timespec start, current;
@@ -91,23 +80,36 @@ void saturate_memory_bus_worker(int duration_us) {
             (current.tv_nsec - start.tv_nsec) / 1000 < duration_us);
     // Free the allocated memory
     free((void*)large_array1);
-    large_array1 = NULL;
 
 }
 
 void saturate_memory_bus(int duration_us) {
     printf("Saturating memory bus for %d microseconds...\n", duration_us);
     pthread_t threads[N];
-                
+    static volatile char* large_array[N] = {NULL};
+    for(int i = 0; i < N; i++) {
+        if (large_array[i] == NULL) {
+        large_array[i] = (volatile char*)malloc(LARGE_ARRAY_SIZE);
+        if (large_array[i] == NULL) {
+            perror("Failed to allocate memory for bus saturation");
+            return;
+        }
+        // Initialize array
+        for (int j = 0; j < LARGE_ARRAY_SIZE; j++) {
+            large_array[i][j] = (char)j;
+        }
+    }
+    }
+    
     // Thread function to saturate memory bus
     void *thread_func(void *arg) {
-        saturate_memory_bus_worker(duration_us);
+        saturate_memory_bus_worker(duration_us, (char*)large_array[(intptr_t)arg]);
         return NULL;
     }
     
     // Create threads
     for (int t = 0; t < N; t++) {
-        if (pthread_create(&threads[t], NULL, thread_func, NULL) != 0) {
+        if (pthread_create(&threads[t], NULL, thread_func, (void*)(intptr_t)t) != 0) {
             perror("Failed to create thread");
         }
     }
